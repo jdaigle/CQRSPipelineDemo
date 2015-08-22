@@ -54,24 +54,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AdventureWorksDbContext.cs" />
-    <Compile Include="API\Client.cs" />
-    <Compile Include="API\QueryDispatcher.cs" />
+    <Compile Include="Data\AdventureWorksDbContext.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="Dispatch\QueryDispatcher.cs" />
     <Compile Include="CommandContext.cs" />
-    <Compile Include="API\CommandDispatcher.cs" />
-    <Compile Include="API\DispatchInfo.cs" />
-    <Compile Include="API\DispatchHandlers.cs" />
+    <Compile Include="Dispatch\CommandDispatcher.cs" />
+    <Compile Include="Dispatch\DispatchInfo.cs" />
+    <Compile Include="Dispatch\DispatchHandlers.cs" />
     <Compile Include="IAPIClient.cs" />
     <Compile Include="IAPICommand.cs" />
     <Compile Include="IAPIQuery.cs" />
+    <Compile Include="Products\Persistence\ProductModelMap.cs" />
     <Compile Include="QueryContext.cs" />
-    <Compile Include="Dapper.cs" />
+    <Compile Include="Data\Dapper.cs" />
     <Compile Include="Products\AddProductModel.cs" />
     <Compile Include="Products\ListProductModels.cs" />
     <Compile Include="Products\ProductModelListItem.cs" />
-    <Compile Include="Products\ProductModel.cs" />
-    <Compile Include="Products\ProductsQueryHandler.cs" />
-    <Compile Include="Products\ProductsCommandHandlers.cs" />
+    <Compile Include="Products\Model\ProductModel.cs" />
+    <Compile Include="Products\Model\ProductsQueryHandler.cs" />
+    <Compile Include="Products\Model\ProductsCommandHandlers.cs" />
     <Compile Include="Products\SetProductModelName.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

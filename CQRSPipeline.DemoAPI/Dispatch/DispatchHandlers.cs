@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CQRSPipeline.DemoAPI.Products;
 
-namespace CQRSPipeline.DemoAPI.API
+namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class DispatchHandlers
     {

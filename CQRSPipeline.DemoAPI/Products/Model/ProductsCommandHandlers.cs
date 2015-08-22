@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQRSPipeline.DemoAPI.Products
+namespace CQRSPipeline.DemoAPI.Products.Model
 {
     public static class ProductsCommandHandlers
     {

@@ -5,20 +5,10 @@ using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CQRSPipeline.DemoAPI.Products.Model;
 
-namespace CQRSPipeline.DemoAPI.Products
+namespace CQRSPipeline.DemoAPI.Products.Persistence
 {
-    public class ProductModel
-    {
-        public int ProductModelID { get; set; }
-        public string Name { get; set; }
-
-        public Guid? rowguid { get; set; }
-        public DateTime? ModifiedDate { get; set; }
-
-        public string OtherField { get; set; }
-    }
-
     public class ProductModelMap : EntityTypeConfiguration<ProductModel>
     {
         public ProductModelMap()

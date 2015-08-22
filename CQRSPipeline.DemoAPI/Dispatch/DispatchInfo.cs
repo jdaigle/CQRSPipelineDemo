@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace CQRSPipeline.DemoAPI.API
+namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public abstract class DispatchInfo
     {

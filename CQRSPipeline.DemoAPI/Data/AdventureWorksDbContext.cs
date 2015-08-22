@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQRSPipeline.DemoAPI
+namespace CQRSPipeline.DemoAPI.Data
 {
     public class AdventureWorksDbContext : DbContext
     {

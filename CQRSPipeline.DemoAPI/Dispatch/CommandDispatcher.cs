@@ -6,8 +6,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CQRSPipeline.DemoAPI.Data;
 
-namespace CQRSPipeline.DemoAPI.API
+namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class CommandDispatcher
     {

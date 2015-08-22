@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using CQRSPipeline.DemoAPI.API;
+using CQRSPipeline.DemoAPI;
 using CQRSPipeline.DemoAPI.Products;
 
 namespace CQRSPipeline.DemoApp

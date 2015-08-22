@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Dapper;
 
-namespace CQRSPipeline.DemoAPI.Products
+namespace CQRSPipeline.DemoAPI.Products.Model
 {
     public static class ProductsQueryHandler
     {

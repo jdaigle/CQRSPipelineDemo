@@ -7,8 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using CQRSPipeline.DemoAPI.Data;
+using CQRSPipeline.DemoAPI.Dispatch;
 
-namespace CQRSPipeline.DemoAPI.API
+namespace CQRSPipeline.DemoAPI
 {
     public class Client : IAPIClient
     {

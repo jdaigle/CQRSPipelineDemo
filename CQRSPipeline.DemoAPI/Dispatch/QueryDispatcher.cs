@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQRSPipeline.DemoAPI.API
+namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class QueryDispatcher
     {

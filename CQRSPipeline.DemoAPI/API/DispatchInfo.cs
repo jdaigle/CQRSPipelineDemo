@@ -8,83 +8,67 @@ namespace CQRSPipeline.DemoAPI.API
 {
     public abstract class DispatchInfo
     {
-        public virtual object Invoke(object arg0)
+        public abstract object Invoke(params object[] args);
+    }
+
+    public class FuncDispatchInfo<TArg0, TResult> : DispatchInfo
+    {
+        public FuncDispatchInfo(MethodInfo method)
         {
-            throw new NotImplementedException();
+            action = (Func<TArg0, TResult>)Delegate.CreateDelegate(typeof(Func<TArg0, TResult>), null, method);
         }
 
-        public virtual object Invoke(object arg0, object arg1)
+        private Func<TArg0, TResult> action;
+
+        public override object Invoke(params object[] args)
         {
-            throw new NotImplementedException();
+            return (TResult)action((TArg0)args[0]);
         }
     }
 
-    public class GenericActionDispatchInfo<TArg0, TResult> : DispatchInfo
+    public class FuncDispatchInfo<TArg0, TArg1, TResult> : DispatchInfo
     {
-        public delegate TResult ActionDelegate(TArg0 arg0);
-
-        public GenericActionDispatchInfo(MethodInfo method)
+        public FuncDispatchInfo(MethodInfo method)
         {
-            action = (ActionDelegate)Delegate.CreateDelegate(typeof(ActionDelegate), null, method);
+            action = (Func<TArg0, TArg1, TResult>)Delegate.CreateDelegate(typeof(Func<TArg0, TArg1, TResult>), null, method);
         }
 
-        private ActionDelegate action;
+        private Func<TArg0, TArg1, TResult> action;
 
-        public override object Invoke(object arg0)
+        public override object Invoke(params object[] args)
         {
-            return (TResult)action((TArg0)arg0);
+            return (TResult)action((TArg0)args[0], (TArg1)args[1]);
         }
     }
 
-    public class GenericVoidActionDispatchInfo<TArg0> : DispatchInfo
+    public class ActionDispatchInfo<TArg0> : DispatchInfo
     {
-        public delegate void ActionDelegate(TArg0 arg0);
-
-        public GenericVoidActionDispatchInfo(MethodInfo method)
+        public ActionDispatchInfo(MethodInfo method)
         {
-            action = (ActionDelegate)Delegate.CreateDelegate(typeof(ActionDelegate), null, method);
+            action = (Action<TArg0>)Delegate.CreateDelegate(typeof(Action<TArg0>), null, method);
         }
 
-        private ActionDelegate action;
+        private Action<TArg0> action;
 
-        public override object Invoke(object arg0)
+        public override object Invoke(params object[] args)
         {
-            action((TArg0)arg0);
+            action((TArg0)args[0]);
             return null;
         }
     }
 
-    public class GenericActionDispatchInfo<TArg0, TArg1, TResult> : DispatchInfo
+    public class ActionDispatchInfo<TArg0, TArg1> : DispatchInfo
     {
-        public delegate TResult ActionDelegate(TArg0 arg0, TArg1 arg1);
-
-        public GenericActionDispatchInfo(MethodInfo method)
+        public ActionDispatchInfo(MethodInfo method)
         {
-            action = (ActionDelegate)Delegate.CreateDelegate(typeof(ActionDelegate), null, method);
+            action = (Action<TArg0, TArg1>)Delegate.CreateDelegate(typeof(Action<TArg0, TArg1>), null, method);
         }
 
-        private ActionDelegate action;
+        private Action<TArg0, TArg1> action;
 
-        public override object Invoke(object arg0, object arg1)
+        public override object Invoke(params object[] args)
         {
-            return (TResult)action((TArg0)arg0, (TArg1)arg1);
-        }
-    }
-
-    public class GenericVoidActionDispatchInfo<TArg0, TArg1> : DispatchInfo
-    {
-        public delegate void ActionDelegate(TArg0 arg0, TArg1 arg1);
-
-        public GenericVoidActionDispatchInfo(MethodInfo method)
-        {
-            action = (ActionDelegate)Delegate.CreateDelegate(typeof(ActionDelegate), null, method);
-        }
-
-        private ActionDelegate action;
-
-        public override object Invoke(object arg0, object arg1)
-        {
-            action((TArg0)arg0, (TArg1)arg1);
+            action((TArg0)args[0], (TArg1)args[1]);
             return null;
         }
     }

@@ -57,22 +57,34 @@ namespace CQRSPipeline.DemoAPI.API
             {
                 if (isVoidReturn)
                 {
-                    return Activator.CreateInstance(typeof(GenericVoidActionDispatchInfo<>).MakeGenericType(parameters[0].ParameterType), method) as DispatchInfo;
+                    return GetActionDispatchInfo(method, typeof(ActionDispatchInfo<>));
                 }
-                return Activator.CreateInstance(typeof(GenericActionDispatchInfo<,>).MakeGenericType(parameters[0].ParameterType, method.ReturnType), method) as DispatchInfo;
+                return GetFuncDispatchInfo(method, typeof(FuncDispatchInfo<,>));
             }
             else if (parameters.Length == 2)
             {
                 if (isVoidReturn)
                 {
-                    return Activator.CreateInstance(typeof(GenericVoidActionDispatchInfo<,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType), method) as DispatchInfo;
+                    return GetActionDispatchInfo(method, typeof(ActionDispatchInfo<,>));
                 }
-                return Activator.CreateInstance(typeof(GenericActionDispatchInfo<,,>).MakeGenericType(parameters[0].ParameterType, parameters[1].ParameterType, method.ReturnType), method) as DispatchInfo;
+                return GetFuncDispatchInfo(method, typeof(FuncDispatchInfo<,,>));
             }
             else
             {
                 throw new NotSupportedException();
             }
+        }
+
+        private static DispatchInfo GetActionDispatchInfo(MethodInfo method, Type dispatchInfoGenericType)
+        {
+            var parameters = method.GetParameters();
+            return Activator.CreateInstance(dispatchInfoGenericType.MakeGenericType(parameters.Select(x => x.ParameterType).ToArray()), method) as DispatchInfo;
+        }
+
+        private static DispatchInfo GetFuncDispatchInfo(MethodInfo method, Type dispatchInfoGenericType)
+        {
+            var parameters = method.GetParameters();
+            return Activator.CreateInstance(dispatchInfoGenericType.MakeGenericType(parameters.Select(x => x.ParameterType).Concat(new[] { method.ReturnType }).ToArray()), method) as DispatchInfo;
         }
 
         private static bool IsCommandHandlerMethod(MethodInfo method)

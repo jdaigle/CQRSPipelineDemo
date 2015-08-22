@@ -18,7 +18,7 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             action = (Func<TArg0, TResult>)Delegate.CreateDelegate(typeof(Func<TArg0, TResult>), null, method);
         }
 
-        private Func<TArg0, TResult> action;
+        private readonly Func<TArg0, TResult> action;
 
         public override object Invoke(params object[] args)
         {
@@ -33,7 +33,7 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             action = (Func<TArg0, TArg1, TResult>)Delegate.CreateDelegate(typeof(Func<TArg0, TArg1, TResult>), null, method);
         }
 
-        private Func<TArg0, TArg1, TResult> action;
+        private readonly Func<TArg0, TArg1, TResult> action;
 
         public override object Invoke(params object[] args)
         {
@@ -48,7 +48,7 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             action = (Action<TArg0>)Delegate.CreateDelegate(typeof(Action<TArg0>), null, method);
         }
 
-        private Action<TArg0> action;
+        private readonly Action<TArg0> action;
 
         public override object Invoke(params object[] args)
         {
@@ -64,7 +64,7 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             action = (Action<TArg0, TArg1>)Delegate.CreateDelegate(typeof(Action<TArg0, TArg1>), null, method);
         }
 
-        private Action<TArg0, TArg1> action;
+        private readonly Action<TArg0, TArg1> action;
 
         public override object Invoke(params object[] args)
         {

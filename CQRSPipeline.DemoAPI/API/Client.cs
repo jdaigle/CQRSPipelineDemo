@@ -30,7 +30,14 @@ namespace CQRSPipeline.DemoAPI.API
 
             var connectionString = ConfigurationManager.ConnectionStrings["AdventureWorks"].ConnectionString;
             dbContextFactory = () => new AdventureWorksDbContext(connectionString);
-            dbConnectionFactory = () => new SqlConnection(connectionString);
+            dbConnectionFactory = () =>
+            {
+                // use this approach instead of creating a straight SqlConnection to enable profiling
+                var c = DbProviderFactories.GetFactory("System.Data.SqlClient").CreateConnection();
+                c.ConnectionString = ConfigurationManager.ConnectionStrings["AdventureWorks"].ConnectionString;
+                return c;
+            };
+
 
             intialized = true;
         }

@@ -51,6 +51,7 @@ namespace CQRSPipeline.DemoApp
             {
                 // queries in the same scope (i.e. database transaction)
                 // transaction is kept open until disposed so don't do much work!
+                // make sure you dispose otherwise the transaction might get stuck!
 
                 productModels = client.Query(new ListProductModels());
 

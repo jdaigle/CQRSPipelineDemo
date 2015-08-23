@@ -9,8 +9,9 @@ namespace CQRSPipeline.DemoAPI
 {
     public class QueryContext
     {
-        public DbConnection CurrentConnection { get; set; }
-        public DbTransaction CurrentTransaction { get; set; }
         public object CurrentQuery { get; set; }
+        public QueryScope QueryScope { get; set; }
+        public DbConnection CurrentConnection { get { return QueryScope.CurrentConnection; } }
+        public DbTransaction CurrentTransaction { get { return QueryScope.CurrentTransaction; } }
     }
 }

@@ -65,7 +65,7 @@ namespace CQRSPipeline.DemoAPI
         private Client()
         {
             this.commandDispatcher = new CommandDispatcher(this, handlers, dbContextFactory);
-            this.queryDispatcher = new QueryDispatcher(this, handlers, dbConnectionFactory);
+            this.queryDispatcher = new QueryDispatcher(this, handlers);
         }
 
         private readonly CommandDispatcher commandDispatcher;
@@ -83,7 +83,40 @@ namespace CQRSPipeline.DemoAPI
 
         public TResult Query<TResult>(IAPIQuery<TResult> query)
         {
-            return queryDispatcher.Dispatch(query);
+            var disposeQueryScope = false;
+            if (currentQueryScope == null)
+            {
+                currentQueryScope = QueryScope();
+                disposeQueryScope = true;
+            }
+            try
+            {
+                return queryDispatcher.Dispatch(query, currentQueryScope);
+            }
+            finally
+            {
+                if (disposeQueryScope)
+                {
+                    currentQueryScope.Dispose();
+                    currentQueryScope = null;
+                }
+            }
+        }
+
+        private QueryScope currentQueryScope;
+
+        public QueryScope QueryScope()
+        {
+            if (currentQueryScope != null)
+            {
+                throw new InvalidOperationException("QueryScope Already Open");
+            }
+            currentQueryScope = new QueryScope(this, dbConnectionFactory);
+            currentQueryScope.Disposed += (object sender, EventArgs args) =>
+            {
+                currentQueryScope = null;
+            };
+            return currentQueryScope;
         }
     }
 }

@@ -30,7 +30,7 @@ namespace CQRSPipeline.DemoAPI.Products.Persistence
 
             this.Property(t => t.ModifiedDate)
                 .IsOptional()
-                .HasColumnType("datetime2");
+                .HasColumnType("datetime");
 
             this.Ignore(t => t.OtherField);
         }

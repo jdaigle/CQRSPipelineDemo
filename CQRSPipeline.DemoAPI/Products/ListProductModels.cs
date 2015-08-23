@@ -9,4 +9,9 @@ namespace CQRSPipeline.DemoAPI.Products
     public class ListProductModels : IAPIQuery<List<ProductModelListItem>>
     {
     }
+
+    public class ListProductReviews : IAPIQuery<List<ProductReviewListItem>>
+    {
+        public int ProductId { get; set; }
+    }
 }

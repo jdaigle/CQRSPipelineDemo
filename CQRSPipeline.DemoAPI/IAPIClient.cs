@@ -22,5 +22,11 @@ namespace CQRSPipeline.DemoAPI
         /// Executs a query and returns the result.
         /// </summary>
         TResult Query<TResult>(IAPIQuery<TResult> query);
+
+        /// <summary>
+        /// Opens a new query scope to execute multiple queries within
+        /// the same transaction
+        /// </summary>
+        QueryScope QueryScope();
     }
 }

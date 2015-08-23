@@ -64,7 +64,11 @@
     <Compile Include="IAPIClient.cs" />
     <Compile Include="IAPICommand.cs" />
     <Compile Include="IAPIQuery.cs" />
+    <Compile Include="Products\AddProductReview.cs" />
+    <Compile Include="Products\Model\ProductReview.cs" />
+    <Compile Include="Products\Persistence\ProductReviewMap.cs" />
     <Compile Include="Products\Persistence\ProductModelMap.cs" />
+    <Compile Include="Products\ProductReviewListItem.cs" />
     <Compile Include="QueryContext.cs" />
     <Compile Include="Data\Dapper.cs" />
     <Compile Include="Products\AddProductModel.cs" />
@@ -75,6 +79,8 @@
     <Compile Include="Products\Model\ProductsCommandHandlers.cs" />
     <Compile Include="Products\SetProductModelName.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryContextExtensions.cs" />
+    <Compile Include="QueryScope.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

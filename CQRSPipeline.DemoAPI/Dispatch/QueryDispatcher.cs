@@ -14,20 +14,19 @@ namespace CQRSPipeline.DemoAPI.Dispatch
     {
         private readonly Client client;
         private readonly DispatchHandlers handlers;
-        private readonly Func<DbConnection> dbConnectionFactory;
 
-        public QueryDispatcher(Client client, DispatchHandlers handlers, Func<DbConnection> dbConnectionFactory)
+        public QueryDispatcher(Client client, DispatchHandlers handlers)
         {
             this.client = client;
             this.handlers = handlers;
-            this.dbConnectionFactory = dbConnectionFactory;
         }
 
-        public TResult Dispatch<TResult>(IAPIQuery<TResult> query)
+        public TResult Dispatch<TResult>(IAPIQuery<TResult> query, QueryScope queryScope)
         {
             var sw = Stopwatch.StartNew();
             var queryContext = new QueryContext();
             queryContext.CurrentQuery = query;
+            queryContext.QueryScope = queryScope;
             try
             {
                 OnDispatching(queryContext);
@@ -49,44 +48,16 @@ namespace CQRSPipeline.DemoAPI.Dispatch
 
         private void OnDispatching(QueryContext queryContext)
         {
-            // TODO: open connection, other pipeline operations here
-            queryContext.CurrentConnection = dbConnectionFactory();
-            queryContext.CurrentConnection.Open();
-            queryContext.CurrentTransaction = queryContext.CurrentConnection.BeginTransaction();
+            // TODO: other pipeline operations here
         }
 
         private void OnDispatched(QueryContext queryContext, Exception exception = null)
         {
-            try
+            if (exception != null)
             {
-                if (exception == null)
-                {
-                    queryContext.CurrentTransaction.Commit();
-                }
-                else
-                {
-                    try
-                    {
-                        queryContext.CurrentTransaction.Rollback();
-                    }
-                    catch (Exception)
-                    {
-                        // do not throw;
-                        // TODO: logging if necessary
-                    }
-                }
+                queryContext.QueryScope.Rollback();
             }
-            finally
-            {
-                if (queryContext.CurrentTransaction != null)
-                {
-                    queryContext.CurrentTransaction = null;
-                }
-                if (queryContext.CurrentConnection != null)
-                {
-                    queryContext.CurrentConnection = null;
-                }
-            }
+            // TODO: other pipeline operations here
         }
     }
 }

@@ -26,5 +26,11 @@ namespace CQRSPipeline.DemoAPI.Products.Model
             var product = commandContext.DbContext.Set<ProductModel>().Find(1);
             product.Name = "Classic Vest " + DateTime.UtcNow;
         }
+
+        public static void Handle(AddProductReview command, CommandContext commandContext)
+        {
+            var productReview = new ProductReview(command);
+            commandContext.DbContext.Set<ProductReview>().Add(productReview);
+        }
     }
 }

@@ -12,13 +12,13 @@ namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class QueryDispatcher
     {
-        private readonly Client client;
         private readonly DispatchHandlers handlers;
+        private readonly FastContainer iocContainer;
 
-        public QueryDispatcher(Client client, DispatchHandlers handlers)
+        public QueryDispatcher(DispatchHandlers handlers, FastContainer iocContainer)
         {
-            this.client = client;
             this.handlers = handlers;
+            this.iocContainer = iocContainer;
         }
 
         public TResult Dispatch<TResult>(IAPIQuery<TResult> query, QueryScope queryScope)
@@ -27,23 +27,43 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             var queryContext = new QueryContext();
             queryContext.CurrentQuery = query;
             queryContext.QueryScope = queryScope;
-            try
+            using (var childContainer = iocContainer.Clone())
             {
-                OnDispatching(queryContext);
-                var handler = handlers.FindHandler(query.GetType());
-                var result = (TResult)handler.Invoke(query, queryContext);
-                OnDispatched(queryContext);
-                // TODO: logging and other instrumentation
-                sw.Stop();
-                return result;
+                childContainer.Register(queryContext);
+                try
+                {
+                    OnDispatching(queryContext);
+                    var handler = handlers.FindHandler(query.GetType());
+                    var result = (TResult)handler.Execute(ResolveParameters(handler, query, childContainer));
+                    OnDispatched(queryContext);
+                    // TODO: logging and other instrumentation
+                    sw.Stop();
+                    return result;
+                }
+                catch (Exception e)
+                {
+                    OnDispatched(queryContext, e);
+                    sw.Stop();
+                    // TODO: logging
+                    throw;
+                }
             }
-            catch (Exception e)
+        }
+
+        private object[] ResolveParameters(ActionMethodDispatcher handler, object query, FastContainer childContainer)
+        {
+            var parameters = new object[handler.ParameterTypes.Count];
+            for (int i = 0; i < parameters.Length; i++)
             {
-                OnDispatched(queryContext, e);
-                sw.Stop();
-                // TODO: logging
-                throw;
+                var parameterType = handler.ParameterTypes[i];
+                if (parameterType == query.GetType())
+                {
+                    parameters[i] = query; // shortcut for query, it's a known type
+                    continue;
+                }
+                parameters[i] = childContainer.Resolve(parameterType);
             }
+            return parameters;
         }
 
         private void OnDispatching(QueryContext queryContext)

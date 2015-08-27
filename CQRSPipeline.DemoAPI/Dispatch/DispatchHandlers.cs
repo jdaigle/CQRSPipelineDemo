@@ -10,9 +10,9 @@ namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class DispatchHandlers
     {
-        private readonly Dictionary<Type, DispatchInfo> delegates = new Dictionary<Type, DispatchInfo>();
+        private readonly Dictionary<Type, ActionMethodDispatcher> delegates = new Dictionary<Type, ActionMethodDispatcher>();
 
-        private void TryAdd(Type key, DispatchInfo dispatchInfo)
+        private void TryAdd(Type key, ActionMethodDispatcher dispatchInfo)
         {
             if (delegates.ContainsKey(key))
             {
@@ -21,7 +21,7 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             delegates.Add(key, dispatchInfo);
         }
 
-        public DispatchInfo FindHandler(Type type)
+        public ActionMethodDispatcher FindHandler(Type type)
         {
             if (!delegates.ContainsKey(type))
             {
@@ -40,84 +40,35 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             {
                 foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
                 {
-                    if (IsCommandHandlerMethod(method) || IsQueryHandlerMethod(method))
+                    if (IsCommandHandlerMethod(method))
                     {
-                        var parameters = method.GetParameters();
-                        TryAdd(parameters[0].ParameterType, GetDispatchInfo(method));
+                        var commandType = method.GetParameters().Single(x => typeof(IAPICommand).IsAssignableFrom(x.ParameterType)).ParameterType;
+                        TryAdd(commandType, new ActionMethodDispatcher(method));
+                    }
+                    if (IsQueryHandlerMethod(method))
+                    {
+                        var queryType = method.GetParameters().Single(x => HasQueryInterface(x.ParameterType)).ParameterType;
+                        TryAdd(queryType, new ActionMethodDispatcher(method));
                     }
                 }
             }
         }
 
-        private static DispatchInfo GetDispatchInfo(MethodInfo method)
-        {
-            var isVoidReturn = method.ReturnType == typeof(void);
-            var parameters = method.GetParameters();
-            if (parameters.Length == 1)
-            {
-                if (isVoidReturn)
-                {
-                    return GetActionDispatchInfo(method, typeof(ActionDispatchInfo<>));
-                }
-                return GetFuncDispatchInfo(method, typeof(FuncDispatchInfo<,>));
-            }
-            else if (parameters.Length == 2)
-            {
-                if (isVoidReturn)
-                {
-                    return GetActionDispatchInfo(method, typeof(ActionDispatchInfo<,>));
-                }
-                return GetFuncDispatchInfo(method, typeof(FuncDispatchInfo<,,>));
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-        }
-
-        private static DispatchInfo GetActionDispatchInfo(MethodInfo method, Type dispatchInfoGenericType)
-        {
-            var parameters = method.GetParameters();
-            return Activator.CreateInstance(dispatchInfoGenericType.MakeGenericType(parameters.Select(x => x.ParameterType).ToArray()), method) as DispatchInfo;
-        }
-
-        private static DispatchInfo GetFuncDispatchInfo(MethodInfo method, Type dispatchInfoGenericType)
-        {
-            var parameters = method.GetParameters();
-            return Activator.CreateInstance(dispatchInfoGenericType.MakeGenericType(parameters.Select(x => x.ParameterType).Concat(new[] { method.ReturnType }).ToArray()), method) as DispatchInfo;
-        }
-
         private static bool IsCommandHandlerMethod(MethodInfo method)
         {
-            var parameters = method.GetParameters();
-            if (parameters.Length == 2)
-            {
-                return HasCommandInterface(parameters[0].ParameterType) &&
-                       typeof(CommandContext).IsAssignableFrom(parameters[1].ParameterType);
-            }
-            return false;
-        }
-
-        private static bool HasCommandInterface(Type type)
-        {
-            return type.GetInterfaces().Any(i => i == typeof(IAPICommand));
+            return method.GetCustomAttribute<CommandHandlerAttribute>() != null;
         }
 
         private static bool IsQueryHandlerMethod(MethodInfo method)
         {
-            var parameters = method.GetParameters();
-            if (parameters.Length == 2)
-            {
-                return HasQueryInterface(parameters[0].ParameterType) &&
-                       typeof(QueryContext).IsAssignableFrom(parameters[1].ParameterType);
-            }
-            return false;
+            return method.GetCustomAttribute<QueryHandlerAttribute>() != null;
         }
 
         private static bool HasQueryInterface(Type type)
         {
             return type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAPIQuery<>));
         }
+
 
         private static IEnumerable<Type> GetTypesSafely(Assembly assembly)
         {

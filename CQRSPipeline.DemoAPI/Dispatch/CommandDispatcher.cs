@@ -12,14 +12,14 @@ namespace CQRSPipeline.DemoAPI.Dispatch
 {
     public class CommandDispatcher
     {
-        private readonly Client client;
         private readonly DispatchHandlers handlers;
         private readonly Func<AdventureWorksDbContext> dbContextFactory;
+        private readonly FastContainer iocContainer;
 
-        public CommandDispatcher(Client client, DispatchHandlers handlers, Func<AdventureWorksDbContext> dbContextFactory)
+        public CommandDispatcher(DispatchHandlers handlers, FastContainer iocContainer, Func<AdventureWorksDbContext> dbContextFactory)
         {
-            this.client = client;
             this.handlers = handlers;
+            this.iocContainer = iocContainer;
             this.dbContextFactory = dbContextFactory;
         }
 
@@ -28,23 +28,43 @@ namespace CQRSPipeline.DemoAPI.Dispatch
             var sw = Stopwatch.StartNew();
             var commandContext = new CommandContext();
             commandContext.CurrentCommand = command;
-            try
+            using (var childContainer = iocContainer.Clone())
             {
-                OnDispatching(commandContext);
-                var handler = handlers.FindHandler(command.GetType());
-                var result = (TResult)handler.Invoke(command, commandContext);
-                OnDispatched(commandContext);
-                // TODO: logging and other instrumentation
-                sw.Stop();
-                return result;
+                childContainer.Register(commandContext);
+                try
+                {
+                    OnDispatching(commandContext);
+                    var handler = handlers.FindHandler(command.GetType());
+                    var result = (TResult)handler.Execute(ResolveParameters(handler, command, childContainer));
+                    OnDispatched(commandContext);
+                    // TODO: logging and other instrumentation
+                    sw.Stop();
+                    return result;
+                }
+                catch (Exception e)
+                {
+                    OnDispatched(commandContext, e);
+                    sw.Stop();
+                    // TODO: logging
+                    throw;
+                }
             }
-            catch (Exception e)
+        }
+
+        private object[] ResolveParameters(ActionMethodDispatcher handler, object command, FastContainer childContainer)
+        {
+            var parameters = new object[handler.ParameterTypes.Count];
+            for (int i = 0; i < parameters.Length; i++)
             {
-                OnDispatched(commandContext, e);
-                sw.Stop();
-                // TODO: logging
-                throw;
+                var parameterType = handler.ParameterTypes[i];
+                if (parameterType == command.GetType())
+                {
+                    parameters[i] = command; // shortcut for command, it's a known type
+                    continue;
+                }
+                parameters[i] = childContainer.Resolve(parameterType);
             }
+            return parameters;
         }
 
         private void OnDispatching(CommandContext commandContext)

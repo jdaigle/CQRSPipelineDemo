@@ -40,6 +40,8 @@ namespace CQRSPipeline.DemoAPI
                 return c;
             };
 
+            iocContainer = new FastContainer();
+            iocContainer.Register<System.Data.Entity.DbContext>(c => c.Resolve<CommandContext>().DbContext);
 
             intialized = true;
         }
@@ -47,6 +49,7 @@ namespace CQRSPipeline.DemoAPI
         private static DispatchHandlers handlers;
         private static Func<AdventureWorksDbContext> dbContextFactory;
         private static Func<DbConnection> dbConnectionFactory;
+        private static FastContainer iocContainer;
 
         /// <summary>
         /// Returns a new instance of an API client.
@@ -64,8 +67,8 @@ namespace CQRSPipeline.DemoAPI
 
         private Client()
         {
-            this.commandDispatcher = new CommandDispatcher(this, handlers, dbContextFactory);
-            this.queryDispatcher = new QueryDispatcher(this, handlers);
+            this.commandDispatcher = new CommandDispatcher(handlers, iocContainer, dbContextFactory);
+            this.queryDispatcher = new QueryDispatcher(handlers, iocContainer);
         }
 
         private readonly CommandDispatcher commandDispatcher;

@@ -31,7 +31,7 @@ namespace CQRSPipeline.DemoAPI.Products.Model
         }
 
         [CommandHandler]
-        public static void Handle(AddProductReview command, CommandContext commandContext)
+        public static void Handle(CommandContext commandContext, AddProductReview command)
         {
             var productReview = new ProductReview(command);
             commandContext.DbContext.Set<ProductReview>().Add(productReview);

@@ -42,6 +42,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="API_Evolution\01_In_The_Beginning.cs" />
+    <None Include="API_Evolution\02_Paramater_Objects.cs" />
+    <None Include="API_Evolution\03_Common_Interface.cs" />
+    <None Include="API_Evolution\04_Single_Reponsibility_Principal.cs" />
+    <None Include="API_Evolution\05_Functional_Dependency.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

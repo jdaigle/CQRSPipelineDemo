@@ -14,23 +14,25 @@ namespace CQRSPipeline.DemoApp
     {
         public static void Main()
         {
-            var processor = new CommandProcessor(DemoAPICommandProcessorConfiguration.Instance);
+            // we can create a singleton instance of the command processor. each execution can occur concurrently
+            // and has it's own state.
+            var processorSingleton = new CommandProcessor(DemoAPICommandProcessorConfiguration.Instance);
 
             // command with return value - 1 transaction per command
-            int id = processor.Execute(new AddProductModel()
+            int id = processorSingleton.Execute(new AddProductModel()
             {
                 // ... properties ...
             });
 
             // command with no return value - 1 transaction per command
-            processor.Execute(new SetProductModelName()
+            processorSingleton.Execute(new SetProductModelName()
             {
                 // ... properties ...
             });
 
-            processor.Execute(new AddProductReview()
+            processorSingleton.Execute(new AddProductReview()
             {
-                ProductId = id,
+                ProductId = 316,
 
                 ReviewerName = "Joseph Daigle",
                 EmailAddress = "joseph.daigle@gmail.com",

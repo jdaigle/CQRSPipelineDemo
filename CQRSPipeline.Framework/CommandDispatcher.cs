@@ -35,20 +35,19 @@ namespace CQRSPipeline.Framework
         public Type ModuleType { get; }
         public Type CommandType { get; }
 
-        public object Execute(object command, SingleInstanceFactory singleInstanceFactory)
+        public void Execute(CommandContext commandContext)
         {
             var closure = _closureConstructor();
             foreach (var setter in _closureFieldSetters)
             {
                 // we are doing dependency inject on C# closures!
-                var fieldValue = singleInstanceFactory(setter.FieldType);
+                var fieldValue = commandContext.SingleInstanceFactory(setter.FieldType);
                 setter.Execute(closure, fieldValue);
             }
-            return _executor(closure, command);
+            _executor(closure, commandContext);
         }
 
-        private delegate object ActionExecutor(object closure, object command);
-        private delegate void VoidActionExecutor(object closure, object command);
+        private delegate void ActionExecutor(object closure, CommandContext commandContext);
         private delegate object LambdaClosureConstructor();
         private delegate void SetClosureFieldValue(object closure, object value);
 
@@ -100,35 +99,35 @@ namespace CQRSPipeline.Framework
 
         private static ActionExecutor GetExecutor(MethodInfo methodInfo, Type commandType)
         {
+            Type commandContextType = methodInfo.ReturnType == typeof(void)
+                ? typeof(CommandContext<,>).MakeGenericType(commandType, typeof(VoidResult))
+                : typeof(CommandContext<,>).MakeGenericType(commandType, methodInfo.ReturnType);
+
             ParameterExpression lambdaClosureParameter = Expression.Parameter(typeof(object), "lambdaClosure");
             UnaryExpression lambdaClosureParameterCastToClosureType = Expression.Convert(lambdaClosureParameter, methodInfo.DeclaringType);
 
-            ParameterExpression commandParameter = Expression.Parameter(typeof(object), "command");
-            UnaryExpression commandParameterCastToCommandType = Expression.Convert(commandParameter, commandType);
+            ParameterExpression commandContextParameter = Expression.Parameter(typeof(CommandContext), "commandContext");
+            UnaryExpression commandContextCastToCommandContextType = Expression.Convert(commandContextParameter, commandContextType);
 
-            MethodCallExpression methodCall = Expression.Call(lambdaClosureParameterCastToClosureType, methodInfo, commandParameterCastToCommandType);
+            // commandContext<,>.Command
+            var getCommandContextCommand = Expression.MakeMemberAccess(commandContextCastToCommandContextType, commandContextType.GetProperty("Command"));
+
+            // _closure.Execute(commandContext<,>.Command)
+            MethodCallExpression methodCall = Expression.Call(lambdaClosureParameterCastToClosureType, methodInfo, getCommandContextCommand);
 
             if (methodCall.Type == typeof(void))
             {
-                Expression<VoidActionExecutor> lambda = Expression.Lambda<VoidActionExecutor>(methodCall, lambdaClosureParameter, commandParameter);
-                VoidActionExecutor voidExecutor = lambda.Compile();
-                return WrapVoidAction(voidExecutor);
+                // _closure.Execute(commandContext<,>.Command)
+                return Expression.Lambda<ActionExecutor>(methodCall, lambdaClosureParameter, commandContextParameter).Compile();
             }
-            else
-            {
-                UnaryExpression castMethodCallAsObject = Expression.Convert(methodCall, typeof(object));
-                Expression<ActionExecutor> lambda = Expression.Lambda<ActionExecutor>(castMethodCallAsObject, lambdaClosureParameter, commandParameter);
-                return lambda.Compile();
-            }
-        }
 
-        private static ActionExecutor WrapVoidAction(VoidActionExecutor executor)
-        {
-            return delegate (object closure, object command)
-            {
-                executor(closure, command);
-                return VoidResult.Value;
-            };
+            // commandContext<,>.Result
+            var setCommandContextResult = Expression.MakeMemberAccess(commandContextCastToCommandContextType, commandContextType.GetProperty("Result"));
+            // commandContext<,>.Result = _closure.Execute(commandContext<,>.Command)
+            var assignedCommandContextResult = Expression.Assign(setCommandContextResult, methodCall);
+
+            Expression<ActionExecutor> lambda = Expression.Lambda<ActionExecutor>(assignedCommandContextResult, lambdaClosureParameter, commandContextParameter);
+            return lambda.Compile();
         }
     }
 }

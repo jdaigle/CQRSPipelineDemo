@@ -21,14 +21,11 @@ namespace CQRSPipeline.Framework
 
         internal virtual object GetCommand() => null;
         internal virtual void SetCommand(object command) { }
-
-        internal virtual void SetResult(object result) { }
     }
 
     internal abstract class CommandContext<TResult> : CommandContext
     {
         public TResult Result { get; internal set; }
-        internal override void SetResult(object result) => Result = (TResult)result;
     }
 
     internal sealed class CommandContext<TCommand, TResult> : CommandContext<TResult>

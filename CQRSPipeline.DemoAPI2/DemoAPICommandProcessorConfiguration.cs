@@ -9,7 +9,6 @@ namespace CQRSPipeline.DemoAPI
 {
     public class DemoAPICommandProcessorConfiguration : ICommandProcessorConfiguration
     {
-        private static readonly string connectionString = ConfigurationManager.ConnectionStrings["AdventureWorks"].ConnectionString;
 
         public static ICommandProcessorConfiguration Instance { get { return LazyInstance.Value; } }
 
@@ -26,15 +25,7 @@ namespace CQRSPipeline.DemoAPI
             behaviors.Add(new CommandDispatcherBehavior(configuration.CommandModuleCatalog)); // always last!!!
             configuration.CompiledCommandHandlerPipeline = PipelinedBehavior.CompileMessageHandlerPipeline(behaviors);
 
-            // note: don't do this for real
-            var staticDbContext = new AdventureWorksDbContext(connectionString);
-
-            configuration.SingleInstanceFactory = type =>
-            {
-                if (type == typeof(DbContext))
-                    return staticDbContext;
-                return null;
-            };
+            configuration.ScopedInstanceFactoryFactory = () => new DemoAPIScopedInstanceFactory();
 
             return configuration;
         });
@@ -43,6 +34,6 @@ namespace CQRSPipeline.DemoAPI
 
         public CommandModuleCatalog CommandModuleCatalog { get; private set; }
         public Action<CommandContext> CompiledCommandHandlerPipeline { get; private set; }
-        public SingleInstanceFactory SingleInstanceFactory { get; private set; }
+        public ScopedInstanceFactoryFactory ScopedInstanceFactoryFactory { get; private set; }
     }
 }

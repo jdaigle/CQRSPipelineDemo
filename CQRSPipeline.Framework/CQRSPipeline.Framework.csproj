@@ -48,6 +48,8 @@
     <Compile Include="ICommandProcessorConfiguration.cs" />
     <Compile Include="PipelinedBehavior.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScopedInstanceFactory.cs" />
+    <Compile Include="ScopedInstanceFactoryFactory.cs" />
     <Compile Include="SingleInstanceFactory.cs" />
     <Compile Include="VoidResult.cs" />
   </ItemGroup>

@@ -9,12 +9,12 @@ namespace CQRSPipeline.Framework
         {
             commandModuleCatalog = configuration.CommandModuleCatalog;
             compiledCommandHandlerPipeline = configuration.CompiledCommandHandlerPipeline;
-            singleInstanceFactory = configuration.SingleInstanceFactory;
+            scopedInstanceFactoryFactory = configuration.ScopedInstanceFactoryFactory;
         }
 
         private readonly CommandModuleCatalog commandModuleCatalog;
         private readonly Action<CommandContext> compiledCommandHandlerPipeline;
-        private readonly SingleInstanceFactory singleInstanceFactory;
+        private readonly ScopedInstanceFactoryFactory scopedInstanceFactoryFactory;
 
         public TResult Execute<TResult>(ICommand<TResult> command)
         {
@@ -26,9 +26,10 @@ namespace CQRSPipeline.Framework
         private void Execute(CommandContext commandContext)
         {
             var startTS = Stopwatch.GetTimestamp();
+            using (var scopedInstanceFactory = scopedInstanceFactoryFactory())
             {
                 // TODO: if using container, wrap in a child container
-                commandContext.SingleInstanceFactory = singleInstanceFactory;
+                commandContext.SingleInstanceFactory = scopedInstanceFactory.SingleInstanceFactory;
 
                 compiledCommandHandlerPipeline(commandContext);
             }

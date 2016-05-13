@@ -13,7 +13,7 @@ namespace CQRSPipeline.DemoAPI.Products
             {
                 var product = dbContext.Set<ProductModel>().Add(new ProductModel()
                 {
-                    ProductModelID = 123,
+                    //ProductModelID = 123,
                     Name = "New Product Name - " + DateTime.Now.Ticks,
                     rowguid = Guid.NewGuid(),
                     ModifiedDate = DateTime.UtcNow,

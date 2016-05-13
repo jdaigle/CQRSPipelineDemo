@@ -6,6 +6,6 @@ namespace CQRSPipeline.Framework
     {
         CommandModuleCatalog CommandModuleCatalog { get;  }
         Action<CommandContext> CompiledCommandHandlerPipeline { get; }
-        SingleInstanceFactory SingleInstanceFactory { get; }
+        ScopedInstanceFactoryFactory ScopedInstanceFactoryFactory { get; }
     }
 }

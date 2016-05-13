@@ -1,16 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CQRSPipeline.Framework
 {
     public class CommandProcessor
     {
+        public CommandProcessor(ICommandProcessorConfiguration configuration)
+        {
+            commandModuleCatalog = configuration.CommandModuleCatalog;
+            compiledCommandHandlerPipeline = configuration.CompiledCommandHandlerPipeline;
+            singleInstanceFactory = configuration.SingleInstanceFactory;
+        }
+
         private readonly CommandModuleCatalog commandModuleCatalog;
         private readonly Action<CommandContext> compiledCommandHandlerPipeline;
+        private readonly SingleInstanceFactory singleInstanceFactory;
 
         public TResult Execute<TResult>(ICommand<TResult> command)
         {
@@ -24,13 +28,12 @@ namespace CQRSPipeline.Framework
             var startTS = Stopwatch.GetTimestamp();
             {
                 // TODO: if using container, wrap in a child container
-
-                commandContext.SingleInstanceFactory = t => null;
+                commandContext.SingleInstanceFactory = singleInstanceFactory;
 
                 compiledCommandHandlerPipeline(commandContext);
             }
             var stopTS = Stopwatch.GetTimestamp();
-            var totalProcessingTimeMilliseconds = ((double)stopTS - (double)startTS) / Stopwatch.Frequency * 1000d; // = (ticks / (ticks/sec) * 1000)
+            var totalProcessingTimeMilliseconds = ((double)stopTS - (double)startTS) / (double)Stopwatch.Frequency * 1000d; // = (ticks / (ticks/sec) * 1000)
         }
     }
 }

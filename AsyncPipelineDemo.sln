@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncPipelineDemoApp", "Asy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncPipelineDemoTests", "AsyncPipelineDemoTests\AsyncPipelineDemoTests.csproj", "{5A831F61-BECB-4639-BF81-A888CD736CD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsyncPipelineDemoTestsStructureMap", "AsyncPipelineDemoTestsStructureMap\AsyncPipelineDemoTestsStructureMap.csproj", "{C6FDE34A-EBDC-4CB1-9D16-7E033D4BF76A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5A831F61-BECB-4639-BF81-A888CD736CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A831F61-BECB-4639-BF81-A888CD736CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A831F61-BECB-4639-BF81-A888CD736CD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6FDE34A-EBDC-4CB1-9D16-7E033D4BF76A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6FDE34A-EBDC-4CB1-9D16-7E033D4BF76A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6FDE34A-EBDC-4CB1-9D16-7E033D4BF76A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6FDE34A-EBDC-4CB1-9D16-7E033D4BF76A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

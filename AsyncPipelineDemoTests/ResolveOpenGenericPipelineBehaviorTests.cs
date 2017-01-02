@@ -28,7 +28,7 @@ namespace AsyncPipelineDemoTests
             var behaviorsForCommandWithoutResult = container.Resolve<IEnumerable<IPipelineBehavior<CommandWithoutResult, NullValue>>>().ToArray();
             Assert.AreEqual(3, behaviorsForCommandWithoutResult.Length);
             Assert.AreEqual(typeof(GenericPipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[0].GetType());
-            Assert.AreEqual(typeof(MarkerInterface1PipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[1].GetType());
+            Assert.AreEqual(typeof(MarkerInterface1PipelineBehavior<NullValue>), behaviorsForCommandWithoutResult[1].GetType());
             Assert.AreEqual(typeof(CommandPipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[2].GetType());
         }
 
@@ -49,11 +49,11 @@ namespace AsyncPipelineDemoTests
             // based on the type of TRequest using marker interfaces
 
             // this behavior will resolve only for MarkerInterface1/TResponse
-            builder.RegisterGeneric(typeof(MarkerInterface1PipelineBehavior<,>))
+            builder.RegisterGeneric(typeof(MarkerInterface1PipelineBehavior<>))
                    .As(typeof(IPipelineBehavior<,>))
                    .InstancePerLifetimeScope();
 
-            // this behavior will resolve only for ICommandInterface/TResponse
+            // this behavior will resolve only for TRequest/TResponse where TRequest : ICommandInterface
             builder.RegisterGeneric(typeof(CommandPipelineBehavior<,>))
                    .As(typeof(IPipelineBehavior<,>))
                    .InstancePerLifetimeScope();
@@ -85,10 +85,9 @@ namespace AsyncPipelineDemoTests
             }
         }
 
-        public sealed class MarkerInterface1PipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-            where TRequest : MarkerInterface1
+        public sealed class MarkerInterface1PipelineBehavior<TResponse> : IPipelineBehavior<MarkerInterface1, TResponse>
         {
-            public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+            public Task<TResponse> Handle(MarkerInterface1 request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }

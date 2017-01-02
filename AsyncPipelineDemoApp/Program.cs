@@ -59,11 +59,13 @@ namespace AsyncPipelineDemoApp
                    .As(typeof(IPipelineBehavior<,>))
                    .InstancePerLifetimeScope();
 
-            // default registration of interfaces
-            builder.RegisterAssemblyTypes(typeof(AddItem).GetTypeInfo().Assembly)
-                   .PreserveExistingDefaults()
-                   .AsImplementedInterfaces()
-                   .InstancePerLifetimeScope();
+            // register handlers
+            builder.RegisterAssemblyTypes(typeof(Program).Assembly)
+                   .AsClosedTypesOf(typeof(IAsyncRequestHandler<,>))
+                   .AsImplementedInterfaces();
+            builder.RegisterAssemblyTypes(typeof(Program).Assembly)
+                   .AsClosedTypesOf(typeof(IAsyncRequestHandler<>))
+                   .AsImplementedInterfaces();
 
             autofacContainer = builder.Build();
         }

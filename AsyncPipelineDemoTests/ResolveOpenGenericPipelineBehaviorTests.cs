@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using AsyncPipelineDemo;
 using Autofac;
+using Autofac.Core;
 using NUnit.Framework;
 
 namespace AsyncPipelineDemoTests
 {
+    [TestFixture]
     public sealed class ResolveOpenGenericPipelineBehaviorTests
     {
         [Test]
@@ -17,21 +19,24 @@ namespace AsyncPipelineDemoTests
             var container = InitContainer();
 
             var behaviorsForCommandWithResult = container.Resolve<IEnumerable<IPipelineBehavior<CommandWithResult, bool>>>().ToArray();
+
             Assert.AreEqual(3, behaviorsForCommandWithResult.Length);
             Assert.AreEqual(typeof(GenericPipelineBehavior<CommandWithResult, bool>), behaviorsForCommandWithResult[0].GetType());
-            Assert.AreEqual(typeof(CommandPipelineBehavior<bool>), behaviorsForCommandWithResult[1].GetType());
+            Assert.AreEqual(typeof(CommandPipelineBehavior<CommandWithResult, bool>), behaviorsForCommandWithResult[1].GetType());
             Assert.AreEqual(typeof(ResponseInspectorPipelineBehavior<CommandWithResult>), behaviorsForCommandWithResult[2].GetType());
 
             var behaviorsForCommandWithoutResult = container.Resolve<IEnumerable<IPipelineBehavior<CommandWithoutResult, NullValue>>>().ToArray();
             Assert.AreEqual(3, behaviorsForCommandWithoutResult.Length);
             Assert.AreEqual(typeof(GenericPipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[0].GetType());
-            Assert.AreEqual(typeof(MarkerInterface1PipelineBehavior<NullValue>), behaviorsForCommandWithoutResult[1].GetType());
-            Assert.AreEqual(typeof(CommandPipelineBehavior<NullValue>), behaviorsForCommandWithoutResult[2].GetType());
+            Assert.AreEqual(typeof(MarkerInterface1PipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[1].GetType());
+            Assert.AreEqual(typeof(CommandPipelineBehavior<CommandWithoutResult, NullValue>), behaviorsForCommandWithoutResult[2].GetType());
         }
 
         private IContainer InitContainer()
         {
             var builder = new ContainerBuilder();
+
+            builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource()); // this currently breaks my open generics
 
             // the order in which the pipelines are registered is the order in which they will be resolved!
 
@@ -44,12 +49,12 @@ namespace AsyncPipelineDemoTests
             // based on the type of TRequest using marker interfaces
 
             // this behavior will resolve only for MarkerInterface1/TResponse
-            builder.RegisterGeneric(typeof(MarkerInterface1PipelineBehavior<>))
+            builder.RegisterGeneric(typeof(MarkerInterface1PipelineBehavior<,>))
                    .As(typeof(IPipelineBehavior<,>))
                    .InstancePerLifetimeScope();
 
             // this behavior will resolve only for ICommandInterface/TResponse
-            builder.RegisterGeneric(typeof(CommandPipelineBehavior<>))
+            builder.RegisterGeneric(typeof(CommandPipelineBehavior<,>))
                    .As(typeof(IPipelineBehavior<,>))
                    .InstancePerLifetimeScope();
 
@@ -71,17 +76,19 @@ namespace AsyncPipelineDemoTests
             }
         }
 
-        public sealed class CommandPipelineBehavior<TResponse> : IPipelineBehavior<ICommandInterface, TResponse>
+        public sealed class CommandPipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+            where TRequest : ICommandInterface
         {
-            public Task<TResponse> Handle(ICommandInterface request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+            public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }
         }
 
-        public sealed class MarkerInterface1PipelineBehavior<TResponse> : IPipelineBehavior<MarkerInterface1, TResponse>
+        public sealed class MarkerInterface1PipelineBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+            where TRequest : MarkerInterface1
         {
-            public Task<TResponse> Handle(MarkerInterface1 request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
+            public Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
             {
                 throw new NotImplementedException();
             }

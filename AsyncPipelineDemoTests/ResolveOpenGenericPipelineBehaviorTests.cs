@@ -36,7 +36,7 @@ namespace AsyncPipelineDemoTests
         {
             var builder = new ContainerBuilder();
 
-            builder.RegisterSource(new Autofac.Features.Variance.ContravariantRegistrationSource()); // this currently breaks my open generics
+            builder.RegisterSource(new ContravariantAsyncNotificationHandlerRegistrationSource());
 
             // the order in which the pipelines are registered is the order in which they will be resolved!
 

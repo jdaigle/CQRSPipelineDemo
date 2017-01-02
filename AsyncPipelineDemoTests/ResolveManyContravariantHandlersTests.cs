@@ -7,6 +7,10 @@ using NUnit.Framework;
 using AsyncPipelineDemo;
 using Autofac;
 using System.Threading;
+using Autofac.Core;
+using Autofac.Builder;
+using Autofac.Features.Scanning;
+using System.Reflection;
 
 namespace AsyncPipelineDemoTests
 {
@@ -19,6 +23,7 @@ namespace AsyncPipelineDemoTests
             var container = InitContainer();
 
             var handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
+            handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
             Assert.AreEqual(2, handlersForConcreteEvent1.Length);
 
             handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
@@ -32,10 +37,12 @@ namespace AsyncPipelineDemoTests
         {
             var builder = new ContainerBuilder();
 
-            builder.RegisterSource(new ContravariantAsyncNotificationHandlerRegistrationSource());
+            //builder.RegisterSource(new ContravariantAsyncNotificationHandlerRegistrationSource());
 
+            var rb =
             builder.RegisterAssemblyTypes(GetType().Assembly)
                    .AsClosedTypesOf(typeof(IAsyncNotificationHandler<>))
+                   .AsContravariant(builder)
                    .AsImplementedInterfaces();
 
             return builder.Build();
@@ -68,6 +75,119 @@ namespace AsyncPipelineDemoTests
                 throw new NotImplementedException();
             }
         }
+    }
+
+    public static class BuilderExtensions
+    {
+        public static IRegistrationBuilder<TLimit, TScanningActivatorData, TRegistrationStyle> AsContravariant<TLimit, TScanningActivatorData, TRegistrationStyle>(
+            this IRegistrationBuilder<TLimit, TScanningActivatorData, TRegistrationStyle> registration
+            , ContainerBuilder builder)
+            where TScanningActivatorData : ScanningActivatorData
+        {
+            builder.RegisterCallback(cfg => cfg.AddRegistrationSource(new ContravariantRegistrationSource(registration.RegistrationData, registration.ActivatorData)));
+
+            return registration;
+        }
+    }
+
+    public class ContravariantRegistrationSource : IRegistrationSource
+    {
+        private readonly RegistrationData _registrationData;
+        private readonly ScanningActivatorData _activatorData;
+
+        public ContravariantRegistrationSource(RegistrationData registrationData, ScanningActivatorData activatorData)
+        {
+            if (registrationData == null) throw new ArgumentNullException(nameof(registrationData));
+            if (activatorData == null) throw new ArgumentNullException(nameof(activatorData));
+
+            _registrationData = registrationData;
+            _activatorData = activatorData;
+        }
+
+        public IEnumerable<IComponentRegistration> RegistrationsFor(Service service, Func<Service, IEnumerable<IComponentRegistration>> registrationAccessor)
+        {
+            if (service == null) throw new ArgumentNullException(nameof(service));
+            if (registrationAccessor == null) throw new ArgumentNullException(nameof(registrationAccessor));
+
+            var swt = service as IServiceWithType;
+            // must be a generic type
+            if (swt == null || !swt.ServiceType.IsGenericType)
+            {
+                return Enumerable.Empty<IComponentRegistration>();
+            }
+
+            // service must match the types being filtered by the ScanningActivatorData
+            if (!_activatorData.Filters.All(filter => filter(swt.ServiceType)))
+            {
+                return Enumerable.Empty<IComponentRegistration>();
+            }
+
+            // TODO: verify the service is an Interface with an contravariant generic parameter
+
+            var args = swt.ServiceType.GetTypeInfo().GenericTypeArguments;
+            var definition = swt.ServiceType.GetGenericTypeDefinition();
+            var contravariantParameter = args[0]; // TODO: the contravariant parameter may not always be in position 0
+            if (contravariantParameter.GetTypeInfo().IsValueType)
+            {
+                return Enumerable.Empty<IComponentRegistration>();
+            }
+
+            var possibleSubstitutions = GetTypesAssignableFrom(contravariantParameter).ToList();
+
+            // TODO: need a where clause to ensure type does in compatible with contraints on generic parameter to prevent exceptions
+            // TODO: need to handle genertic type with multiple parameters (one of with is the contravariant parameter that we're substituting)
+            var variations = possibleSubstitutions
+                .Select(a => definition.MakeGenericType(a))
+                .ToList();
+
+            var variantRegistrations = variations
+                .SelectMany(v => registrationAccessor(swt.ChangeType(v)))
+                .Where(r => !r.Metadata.ContainsKey(nameof(ContravariantAsyncNotificationHandlerRegistrationSource)))
+                .ToList();
+
+            return variantRegistrations
+                 .Select(vr => RegistrationBuilder
+                    .ForDelegate((c, p) => c.ResolveComponent(vr, p))
+                    .Targeting(vr)
+                    .As(service)
+                    .WithMetadata(nameof(ContravariantAsyncNotificationHandlerRegistrationSource), true)
+                    .CreateRegistration());
+        }
+
+        private static IEnumerable<Type> GetTypesAssignableFrom(Type type) => GetBagOfTypesAssignableFrom(type).Distinct();
+
+        private static IEnumerable<Type> GetBagOfTypesAssignableFrom(Type type)
+        {
+            if (type.GetTypeInfo().BaseType != null)
+            {
+                yield return type.GetTypeInfo().BaseType;
+                foreach (var fromBase in GetBagOfTypesAssignableFrom(type.GetTypeInfo().BaseType))
+                {
+                    yield return fromBase;
+                }
+            }
+            else
+            {
+                if (type != typeof(object))
+                {
+                    yield return typeof(object);
+                }
+            }
+
+            foreach (var ifce in type.GetTypeInfo().ImplementedInterfaces)
+            {
+                if (ifce != type)
+                {
+                    yield return ifce;
+                    foreach (var fromIfce in GetBagOfTypesAssignableFrom(ifce))
+                    {
+                        yield return fromIfce;
+                    }
+                }
+            }
+        }
+
+        public bool IsAdapterForIndividualComponents => true;
     }
 
 }

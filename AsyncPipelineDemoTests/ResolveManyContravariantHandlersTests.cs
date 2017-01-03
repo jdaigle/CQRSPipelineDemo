@@ -23,7 +23,6 @@ namespace AsyncPipelineDemoTests
             var container = InitContainer();
 
             var handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
-            handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
             Assert.AreEqual(2, handlersForConcreteEvent1.Length);
 
             handlersForConcreteEvent1 = container.Resolve<IEnumerable<IAsyncNotificationHandler<ConcreteEvent1>>>().ToArray();
@@ -37,13 +36,11 @@ namespace AsyncPipelineDemoTests
         {
             var builder = new ContainerBuilder();
 
-            //builder.RegisterSource(new ContravariantAsyncNotificationHandlerRegistrationSource());
-
-            var rb =
             builder.RegisterAssemblyTypes(GetType().Assembly)
-                   .AsClosedTypesOf(typeof(IAsyncNotificationHandler<>))
-                   .AsContravariant(builder)
+                   .PreserveExistingDefaults()
                    .AsImplementedInterfaces();
+
+            builder.RegisterSource(new OpenGenericContravariantRegistrationSource(typeof(IAsyncNotificationHandler<>)));
 
             return builder.Build();
         }
@@ -77,31 +74,15 @@ namespace AsyncPipelineDemoTests
         }
     }
 
-    public static class BuilderExtensions
+    public class OpenGenericContravariantRegistrationSource : IRegistrationSource
     {
-        public static IRegistrationBuilder<TLimit, TScanningActivatorData, TRegistrationStyle> AsContravariant<TLimit, TScanningActivatorData, TRegistrationStyle>(
-            this IRegistrationBuilder<TLimit, TScanningActivatorData, TRegistrationStyle> registration
-            , ContainerBuilder builder)
-            where TScanningActivatorData : ScanningActivatorData
+        private readonly Type _openGenericType;
+
+        public OpenGenericContravariantRegistrationSource(Type openGenericType)
         {
-            builder.RegisterCallback(cfg => cfg.AddRegistrationSource(new ContravariantRegistrationSource(registration.RegistrationData, registration.ActivatorData)));
+            if (openGenericType == null) throw new ArgumentNullException(nameof(openGenericType));
 
-            return registration;
-        }
-    }
-
-    public class ContravariantRegistrationSource : IRegistrationSource
-    {
-        private readonly RegistrationData _registrationData;
-        private readonly ScanningActivatorData _activatorData;
-
-        public ContravariantRegistrationSource(RegistrationData registrationData, ScanningActivatorData activatorData)
-        {
-            if (registrationData == null) throw new ArgumentNullException(nameof(registrationData));
-            if (activatorData == null) throw new ArgumentNullException(nameof(activatorData));
-
-            _registrationData = registrationData;
-            _activatorData = activatorData;
+            _openGenericType = openGenericType;
         }
 
         public IEnumerable<IComponentRegistration> RegistrationsFor(Service service, Func<Service, IEnumerable<IComponentRegistration>> registrationAccessor)
@@ -116,8 +97,7 @@ namespace AsyncPipelineDemoTests
                 return Enumerable.Empty<IComponentRegistration>();
             }
 
-            // service must match the types being filtered by the ScanningActivatorData
-            if (!_activatorData.Filters.All(filter => filter(swt.ServiceType)))
+            if (!swt.ServiceType.IsClosedTypeOf(_openGenericType))
             {
                 return Enumerable.Empty<IComponentRegistration>();
             }
